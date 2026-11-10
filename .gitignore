@@ -1,54 +1,17 @@
-# Compiled class files
-*.class
-
-# Log files
-*.log
-
-# Package Files
-*.jar
-*.war
-*.ear
-*.nar
-
-# JVM crash logs
-hs_err_pid*
-
-# Maven / Build tools
 target/
-build/
-.gradle/
 pom.xml.tag
 pom.xml.releaseBackup
-pom.xml.nextBackup
 pom.xml.versionsBackup
-pom.xml.aux
+pom.xml.next
+release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
+# https://maven.apache.org/tools/wrapper/#Usage_with_or_without_Binary_JAR
 .mvn/wrapper/maven-wrapper.jar
 
-# IDEs and Editors (IntelliJ, Eclipse, VS Code)
-.idea/
-*.iml
-*.iws
-*.ipr
-.vscode/
-.settings/
+# Eclipse m2e generated files
+# Eclipse Core
 .project
+# JDT-specific (Eclipse Java Development Tools)
 .classpath
-.sts/
-bin/
-
-# Operating System Files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-Desktop.ini
-
-# Project Database (SQLite)
-# Uncomment the line below if you don't want to commit your local database file to GitHub
-# *.db
