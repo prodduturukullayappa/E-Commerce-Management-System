@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopEase - Order History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/index.html"><i class="fas fa-shopping-bag me-2"></i>ShopEase</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/products.html">Products</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/orders.html">My Orders</a></li>
+                </ul>
+                <div class="d-flex align-items-center me-3" id="auth-nav-items"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div id="alert-container"></div>
+        <h1 class="h3 fw-bold mb-4">Order History</h1>
+
+        <div class="card p-4">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Order Number</th>
+                            <th>Customer Name</th>
+                            <th>Date</th>
+                            <th>Payment</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table-body">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">Order Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="order-modal-body">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <div class="container">
+            <p class="mb-0">&copy; 2026 ShopEase E-Commerce System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        async function loadOrders() {
+            try {
+                const user = getCurrentUser();
+                const url = user ? `/api/orders?email=${encodeURIComponent(user.email)}` : '/api/orders';
+                const res = await fetch(url);
+                const orders = await res.json();
+                const tbody = document.getElementById('orders-table-body');
+
+                if (orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No orders found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = orders.map(order => `
+                    <tr>
+                        <td class="fw-bold text-primary">${order.orderNumber}</td>
+                        <td>${order.customerName}</td>
+                        <td>${new Date(order.orderDate).toLocaleString()}</td>
+                        <td><span class="badge bg-info text-dark">${order.paymentMethod || 'COD'}</span></td>
+                        <td>₹${order.totalAmount.toFixed(2)}</td>
+                        <td><span class="badge bg-secondary badge-status">${order.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewOrderDetails(${order.id})"><i class="fas fa-eye me-1"></i> View</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const orderId = urlParams.get('orderId');
+                if (orderId) {
+                    viewOrderDetails(orderId);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function viewOrderDetails(orderId) {
+            try {
+                const res = await fetch(`/api/orders/${orderId}`);
+                const order = await res.json();
+                const body = document.getElementById('order-modal-body');
+
+                let itemsHtml = order.orderItems.map(item => `
+                    <tr>
+                        <td>${item.productName}</td>
+                        <td>₹${item.price.toFixed(2)}</td>
+                        <td>${item.quantity}</td>
+                        <td>₹${(item.price * item.quantity).toFixed(2)}</td>
+                    </tr>
+                `).join('');
+
+                body.innerHTML = `
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Order Number:</strong> ${order.orderNumber}</p>
+                            <p class="mb-1"><strong>Date:</strong> ${new Date(order.orderDate).toLocaleString()}</p>
+                            <p class="mb-1"><strong>Status:</strong> <span class="badge bg-primary">${order.status}</span></p>
+                            <p class="mb-1"><strong>Payment Method:</strong> <span class="badge bg-info text-dark">${order.paymentMethod || 'COD'}</span> (${order.paymentStatus || 'COMPLETED'})</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Customer Name:</strong> ${order.customerName}</p>
+                            <p class="mb-1"><strong>Email:</strong> ${order.customerEmail}</p>
+                            <p class="mb-1"><strong>Phone:</strong> ${order.customerPhone || 'N/A'}</p>
+                            <p class="mb-1"><strong>Address:</strong> ${order.customerAddress}</p>
+                        </div>
+                    </div>
+                    <h6 class="fw-bold mb-2">Ordered Items</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itemsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end">
+                        <h5 class="fw-bold">Total Amount: ₹${order.totalAmount.toFixed(2)}</h5>
+                    </div>
+                `;
+
+                const modal = new bootstrap.Modal(document.getElementById('orderModal'));
+                modal.show();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadOrders();
+        });
+    </script>
+</body>
+</html>

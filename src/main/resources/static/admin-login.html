@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopEase - Admin Portal Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-dark text-white">
+    <div class="container my-5 py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div id="alert-container"></div>
+                <div class="card bg-secondary text-white shadow-lg p-4 border-0">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-shield-alt fa-4x text-warning mb-2"></i>
+                        <h3 class="fw-bold">Admin Portal</h3>
+                        <p class="text-light small">Authorized management access only</p>
+                    </div>
+                    <form onsubmit="handleAdminLogin(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Admin Email</label>
+                            <input type="email" class="form-control" id="admin-email" required value="admin@shop.com">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Password</label>
+                            <input type="password" class="form-control" id="admin-password" required value="admin123">
+                        </div>
+                        <button type="submit" class="btn btn-warning text-dark w-100 py-2 fw-bold fs-5">Login to Dashboard</button>
+                    </form>
+                    <div class="text-center mt-3">
+                        <small><a href="/index.html" class="text-light">Return to Storefront</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+
+            try {
+                const res = await fetch('/api/customers/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (res.ok) {
+                    const admin = await res.json();
+                    localStorage.setItem('adminUser', JSON.stringify(admin));
+                    showAlert('Admin authenticated! Opening dashboard...', 'success');
+                    setTimeout(() => { window.location.href = '/admin.html'; }, 1000);
+                } else {
+                    const err = await res.json();
+                    showAlert(err.error || 'Invalid admin credentials', 'danger');
+                }
+            } catch (err) {
+                showAlert('Error verifying admin credentials', 'danger');
+            }
+        }
+    </script>
+</body>
+</html>

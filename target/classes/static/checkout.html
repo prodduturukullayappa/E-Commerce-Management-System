@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopEase - Checkout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/index.html"><i class="fas fa-shopping-bag me-2"></i>ShopEase</a>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div id="alert-container"></div>
+        <h1 class="h3 fw-bold mb-4">Checkout & Payment</h1>
+
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card p-4 mb-4">
+                    <form id="checkout-form" onsubmit="submitOrder(event)">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-user-circle text-primary me-2"></i>Shipping Details</h5>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Full Name</label>
+                            <input type="text" class="form-control" id="name" required placeholder="Rahul Sharma">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email Address</label>
+                            <input type="email" class="form-control" id="email" required placeholder="rahul@example.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" required placeholder="+91 9876543210">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Shipping Address</label>
+                            <textarea class="form-control" id="address" rows="3" required placeholder="House No, Street, Landmark, City, Pincode"></textarea>
+                        </div>
+
+                        <h5 class="fw-bold mb-3"><i class="fas fa-wallet text-primary me-2"></i>Select Payment Method</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="form-check payment-card">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="payUpi" value="UPI" checked>
+                                    <label class="form-check-label w-100" for="payUpi">
+                                        <i class="fas fa-qrcode text-primary me-2"></i><strong>UPI / QR Code</strong>
+                                        <div class="small text-muted">Google Pay, PhonePe, Paytm, BHIM</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check payment-card">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="payCard" value="CARD">
+                                    <label class="form-check-label w-100" for="payCard">
+                                        <i class="fas fa-credit-card text-success me-2"></i><strong>Credit / Debit Card</strong>
+                                        <div class="small text-muted">Visa, Mastercard, RuPay</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check payment-card">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="payNet" value="NET_BANKING">
+                                    <label class="form-check-label w-100" for="payNet">
+                                        <i class="fas fa-university text-info me-2"></i><strong>Net Banking</strong>
+                                        <div class="small text-muted">SBI, HDFC, ICICI, Axis & all major banks</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check payment-card">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="payCod" value="COD">
+                                    <label class="form-check-label w-100" for="payCod">
+                                        <i class="fas fa-money-bill-wave text-warning me-2"></i><strong>Cash on Delivery (COD)</strong>
+                                        <div class="small text-muted">Pay cash upon delivery</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5"><i class="fas fa-lock me-2"></i>Place Order</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card p-4" id="order-summary-box">
+                    <h4 class="fw-bold mb-3">Order Summary</h4>
+                    <div id="summary-items">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <div class="container">
+            <p class="mb-0">&copy; 2026 ShopEase E-Commerce System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        async function loadSummary() {
+            const customerId = getCustomerId();
+            const user = getCurrentUser();
+            if (user) {
+                document.getElementById('name').value = user.name;
+                document.getElementById('email').value = user.email;
+                document.getElementById('phone').value = user.phone || '';
+                document.getElementById('address').value = user.address || '';
+            }
+
+            try {
+                const res = await fetch(`/api/cart/${customerId}`);
+                const items = await res.json();
+                if (items.length === 0) {
+                    window.location.href = '/cart.html';
+                    return;
+                }
+                let subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+                let shipping = 99.00;
+                let total = subtotal + shipping;
+
+                let html = '<ul class="list-group list-group-flush mb-3">';
+                items.forEach(item => {
+                    html += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <h6 class="mb-0">${item.product.name}</h6>
+                                <small class="text-muted">Qty: ${item.quantity}</small>
+                            </div>
+                            <span>₹${(item.product.price * item.quantity).toFixed(2)}</span>
+                        </li>
+                    `;
+                });
+                html += `</ul>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal</span>
+                        <span>₹${subtotal.toFixed(2)}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping</span>
+                        <span>₹${shipping.toFixed(2)}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold fs-5">Total</span>
+                        <span class="fw-bold fs-5 text-primary">₹${total.toFixed(2)}</span>
+                    </div>
+                `;
+                document.getElementById('summary-items').innerHTML = html;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function submitOrder(event) {
+            event.preventDefault();
+            const customerId = getCustomerId();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const address = document.getElementById('address').value;
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+            try {
+                const orderRes = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerId: parseInt(customerId),
+                        customerName: name,
+                        customerEmail: email,
+                        customerPhone: phone,
+                        customerAddress: address,
+                        paymentMethod: paymentMethod
+                    })
+                });
+
+                if (orderRes.ok) {
+                    const order = await orderRes.json();
+                    alert(`Order Placed Successfully via ${paymentMethod}! Order Number: ${order.orderNumber}`);
+                    window.location.href = `/orders.html?orderId=${order.id}`;
+                } else {
+                    const errData = await orderRes.json();
+                    showAlert(errData.error || 'Failed to place order', 'danger');
+                }
+            } catch (err) {
+                showAlert('Error placing order', 'danger');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSummary();
+        });
+    </script>
+</body>
+</html>
