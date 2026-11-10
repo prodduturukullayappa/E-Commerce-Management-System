@@ -114,8 +114,8 @@ ecommerce-app/
    http://localhost:8080
 
  ## 📥Clone the Repository
- git 
- cd Ecommerce
+ git clone https://github.com/prodduturukullayappa/E-Commerce-Management-System.git
+ cd EcommerceManagementSystem
 
  ## How the System works
 1. User Interface (Frontend): You open the website in your browser to browse products, manage your shopping cart, and place orders.
